@@ -1,0 +1,16 @@
+{
+  "name": "YRD Information Systems",
+  "short_name": "YRD Site",
+  "start_url": "index.php",
+  "display": "standalone",
+  "background_color": "#071521",
+  "theme_color": "#6cc7ff",
+  "icons": [
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
