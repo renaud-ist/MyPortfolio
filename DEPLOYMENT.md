@@ -33,6 +33,12 @@ MySQL
 
 GitHub Pages may host a separate static frontend only if the frontend is designed to call an externally hosted PHP API. That is not the current application architecture and it is not the recommended deployment shape for this repository.
 
+## GitHub Pages compatibility
+
+The static portfolio frontend can be published on GitHub Pages as a presentation layer, but it is not a replacement for the production application. The static website can safely host the portfolio content, navigation, images, and downloadable CV, provided that these paths remain relative and the backend endpoints remain on a PHP-capable host.
+
+The GitHub Pages version can work only when the frontend is intentionally limited to display-only content. The current contact form and admin features require the PHP + MySQL deployment because GitHub Pages cannot execute PHP or access MySQL.
+
 ## Step 1 — Hosting
 
 The production host must support:
