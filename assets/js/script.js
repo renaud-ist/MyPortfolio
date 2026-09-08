@@ -93,22 +93,6 @@ if ('IntersectionObserver' in window) {
 const form = document.getElementById('contactForm');
 const statusBox = document.querySelector('.form-status');
 
-const csrfTokenField = document.getElementById('csrfToken');
-let csrfRequest = null;
-
-if (csrfTokenField && window.location.protocol !== 'file:') {
-  csrfRequest = fetch('assets/php/csrf.php', { credentials: 'same-origin' })
-    .then((response) => response.ok ? response.json() : null)
-    .then((result) => {
-      if (result && result.success && result.token) {
-        csrfTokenField.value = result.token;
-      }
-    })
-    .catch(() => {
-      csrfTokenField.value = '';
-    });
-}
-
 const openEmailFallback = (formData) => {
   const name = String(formData.get('name') || '').trim();
   const email = String(formData.get('email') || '').trim();
@@ -129,50 +113,45 @@ if (form) {
     submitButton.disabled = true;
     submitButton.textContent = 'Sending...';
 
+    statusBox.classList.remove('error');
+    statusBox.textContent = 'Sending your message...';
+
     try {
-      if (csrfRequest && !csrfTokenField.value) {
-        await csrfRequest;
-      }
-
-      if (window.location.protocol === 'file:') {
-        openEmailFallback(formData);
-        statusBox.classList.remove('error');
-        statusBox.textContent = 'Opening your email client...';
-        return;
-      }
-
-      const response = await fetch('assets/php/contact.php', {
+      const response = await fetch(form.action, {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+          Accept: 'application/json'
+        }
       });
 
-      const contentType = response.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        openEmailFallback(formData);
-        statusBox.classList.remove('error');
-        statusBox.textContent = 'PHP is unavailable, so your email client will finish the message.';
-        return;
+      let result = {};
+
+      try {
+        result = await response.json();
+      } catch {
+        result = {};
       }
 
-      const result = await response.json();
+      if (!response.ok) {
+        const message = result.errors
+          ?.map((error) => error.message)
+          .join(', ');
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Submission failed.');
+        throw new Error(message || 'Submission failed.');
       }
 
       statusBox.classList.remove('error');
-      statusBox.textContent = result.message;
+      statusBox.textContent =
+        result.message || 'Thanks! Your message has been sent successfully.';
+
       form.reset();
     } catch (error) {
-      if (error instanceof TypeError) {
-        openEmailFallback(formData);
-        statusBox.classList.remove('error');
-        statusBox.textContent = 'The server is unavailable, so your email client will finish the message.';
-        return;
-      }
+      console.error('Contact form submission failed:', error);
 
       statusBox.classList.add('error');
-      statusBox.textContent = error.message || 'Something went wrong. Please try again.';
+      statusBox.textContent =
+        error.message || 'Something went wrong. Please try again.';
     } finally {
       submitButton.disabled = false;
       submitButton.textContent = 'Send message';

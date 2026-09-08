@@ -7,7 +7,7 @@
       name="description"
       content="Yangda Renaud Dimanche is a Master’s graduate in Information Systems and Technology focused on AI, digital transformation, cloud, and business process improvement."
     />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self' mailto:;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://formspree.io; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://formspree.io mailto:;" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Yangda Renaud Dimanche | Information Systems and Technology" />
     <meta property="og:description" content="Master’s graduate focused on information systems, software development, data management, cloud, and practical digital transformation." />
@@ -540,9 +540,13 @@
             <a href="resume/CV.docx" class="button button-primary" download>Download full CV</a>
           </div>
 
-          <form id="contactForm" class="contact-card" method="post" action="assets/php/contact.php">
-            <input type="hidden" name="csrf_token" id="csrfToken" value="" />
-            <label class="honeypot" aria-hidden="true">
+          <form
+  id="contactForm"
+  class="contact-card"
+  method="POST"
+  action="https://formspree.io/f/xdeowqyv"
+>
+                        <label class="honeypot" aria-hidden="true">
               Website
               <input type="text" name="website" tabindex="-1" autocomplete="off" />
             </label>
@@ -560,7 +564,7 @@
             </label>
             <button type="submit" class="button button-primary">Send message</button>
             <p class="form-status" aria-live="polite"></p>
-            <p class="privacy-note">Your name, email, and message are stored securely so I can respond. Please do not include passwords or other sensitive information.</p>
+            <p class="privacy-note">Your name, email, and message are submitted securely so I can respond. Please do not include passwords or other sensitive information.</p>
           </form>
         </div>
 
