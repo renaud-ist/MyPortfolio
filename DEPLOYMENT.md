@@ -96,6 +96,8 @@ The current application expects:
 - `DB_PASS`
 - `CONTACT_RATE_LIMIT_SECONDS`
 - `CONTACT_ALLOWED_ORIGINS`
+- `API_AUTH_TOKEN_TTL_SECONDS`
+- `API_AUTH_LOGIN_RATE_LIMIT_SECONDS`
 - `CONTACT_NOTIFICATION_EMAIL`
 - `CONTACT_ALLOW_FILE_FALLBACK`
 - `ADMIN_USER`
@@ -113,6 +115,8 @@ php tests/migrations.php
 ```
 
 The legacy `contact_messages` and `contact_rate_limits` tables are not modified or deleted. Existing contact messages are copied to the new conversation tables using legacy ID mappings. A failed migration is not recorded as applied.
+
+API authentication uses HTTPS-only opaque bearer tokens. The raw token is returned once at login and is not stored in the database. Keep the configured token lifetime short and never expose `.env` or token values in source control.
 
 ## Step 4 — Verification
 
