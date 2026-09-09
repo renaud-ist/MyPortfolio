@@ -66,6 +66,24 @@ mysql -u root -p -e "source setup.sql"
 
 The schema contains the contact-message table and the database-backed rate-limit table. Contact records support read and archive states for dashboard management.
 
+### Backend foundation migrations
+
+Run migrations from the project root on the PHP/MySQL host:
+
+```powershell
+php database/migrate.php status
+php database/migrate.php migrate
+php database/migrate.php verify
+```
+
+The migration runner uses the existing PDO configuration from `assets/php/db.php`. It creates `schema_migrations`, adds the backend foundation tables, and copies existing `contact_messages` into conversations and visitor messages without modifying or deleting the legacy table. Re-running `migrate` is safe.
+
+Run the migration checks after applying the migrations:
+
+```powershell
+php tests/migrations.php
+```
+
 ## Run locally
 
 Use a PHP-enabled server from the project directory:

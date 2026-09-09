@@ -60,7 +60,9 @@ The administrator should:
 2. Create a restricted application database user.
 3. Grant only the permissions required by the application.
 4. Import `setup.sql`.
-5. Verify that the expected tables exist.
+5. Run `php database/migrate.php migrate` from the project root.
+6. Run `php database/migrate.php verify` and confirm that legacy contact counts match.
+7. Verify that the expected tables exist.
 
 A typical pattern is:
 
@@ -97,6 +99,19 @@ The current application expects:
 - `CONTACT_ALLOW_FILE_FALLBACK`
 - `ADMIN_USER`
 - `ADMIN_PASS`
+
+### Migration commands
+
+The migration system reuses `assets/php/db.php` and requires PHP 8.1+ with PDO MySQL:
+
+```powershell
+php database/migrate.php status
+php database/migrate.php migrate
+php database/migrate.php verify
+php tests/migrations.php
+```
+
+The legacy `contact_messages` and `contact_rate_limits` tables are not modified or deleted. Existing contact messages are copied to the new conversation tables using legacy ID mappings. A failed migration is not recorded as applied.
 
 ## Step 4 — Verification
 
