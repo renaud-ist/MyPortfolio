@@ -44,6 +44,7 @@ DB_NAME=portfolio_db
 DB_USER=root
 DB_PASS=your-mysql-password
 CONTACT_RATE_LIMIT_SECONDS=60
+CONTACT_ALLOWED_ORIGINS=https://renaud-ist.github.io,http://localhost:8080,http://127.0.0.1:8080
 CONTACT_NOTIFICATION_EMAIL=
 SMTP_HOST=
 SMTP_PORT=587
@@ -103,6 +104,7 @@ A static server can display the page, but it cannot execute the PHP API or conne
 ## Backend routes
 
 ```text
+POST /api/contact.php         Save a JSON contact message in the backend foundation
 POST /assets/php/contact.php   Save a contact message
 GET  /assets/php/csrf.php      Create a contact-form token
 GET  /assets/php/health.php    Check database readiness
