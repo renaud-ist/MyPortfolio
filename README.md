@@ -113,6 +113,7 @@ POST /api/auth/login.php      Authenticate an admin and issue a bearer token
 POST /api/auth/logout.php     Revoke the current bearer token
 GET  /api/auth/me.php         Return the authenticated admin identity
 POST /api/conversation/reply.php?id=<id>  Store an authenticated admin reply
+GET  /api/notifications.php       List authenticated-admin notifications
 POST /assets/php/contact.php   Save a contact message
 GET  /assets/php/csrf.php      Create a contact-form token
 GET  /assets/php/health.php    Check database readiness
@@ -124,6 +125,8 @@ The dashboard requires `ADMIN_USER` and `ADMIN_PASS`. The password may be a PHP 
 The API authentication endpoints use short-lived opaque bearer tokens. Tokens are sent as `Authorization: Bearer <token>` and are never stored in plaintext. Configure their lifetime with `API_AUTH_TOKEN_TTL_SECONDS` (default 1800 seconds). Login attempts use the existing rate-limit table with `API_AUTH_LOGIN_RATE_LIMIT_SECONDS` (default 10 seconds).
 
 Admin replies are persisted before any optional email transport attempt. Email delivery is disabled by default with `REPLY_EMAIL_ENABLED=false`; enabling it requires a valid `REPLY_FROM_EMAIL` and a verified PHP mail transport on the host. No notification record is created for replies in this stage.
+
+Notifications use the existing `recipient_type=admin`, `notification_type=new_contact_message`, and `status=pending` conventions. `GET /api/notifications.php` is authenticated and paginated. The current schema has no notification read-state or per-admin owner field, so Stage 7 does not expose read/unread mutation or claim per-admin notification ownership.
 
 ## Validation
 

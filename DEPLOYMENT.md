@@ -122,6 +122,8 @@ API authentication uses HTTPS-only opaque bearer tokens. The raw token is return
 
 Admin replies are stored in `conversation_messages` before optional email delivery. `REPLY_EMAIL_ENABLED=false` is the default. Production email requires a verified host mail transport and a valid `REPLY_FROM_EMAIL`; no AwardSpace SMTP assumptions are included.
 
+The authenticated notification list is available at `GET /api/notifications.php`. It reads the existing admin-recipient notifications only. The current schema has no notification read-state or per-admin owner field, so no read/unread endpoint is provided and no notification migration was added.
+
 ## Step 4 — Verification
 
 The actual project routes and checks are:
