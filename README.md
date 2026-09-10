@@ -47,6 +47,8 @@ CONTACT_RATE_LIMIT_SECONDS=60
 CONTACT_ALLOWED_ORIGINS=https://renaud-ist.github.io,http://localhost:8080,http://127.0.0.1:8080
 API_AUTH_TOKEN_TTL_SECONDS=1800
 API_AUTH_LOGIN_RATE_LIMIT_SECONDS=10
+REPLY_EMAIL_ENABLED=false
+REPLY_FROM_EMAIL=
 CONTACT_NOTIFICATION_EMAIL=
 SMTP_HOST=
 SMTP_PORT=587
@@ -110,6 +112,7 @@ POST /api/contact.php         Save a JSON contact message in the backend foundat
 POST /api/auth/login.php      Authenticate an admin and issue a bearer token
 POST /api/auth/logout.php     Revoke the current bearer token
 GET  /api/auth/me.php         Return the authenticated admin identity
+POST /api/conversation/reply.php?id=<id>  Store an authenticated admin reply
 POST /assets/php/contact.php   Save a contact message
 GET  /assets/php/csrf.php      Create a contact-form token
 GET  /assets/php/health.php    Check database readiness
@@ -119,6 +122,8 @@ GET  /assets/php/admin.php     Open the administrator dashboard
 The dashboard requires `ADMIN_USER` and `ADMIN_PASS`. The password may be a PHP hash created with `password_hash()`.
 
 The API authentication endpoints use short-lived opaque bearer tokens. Tokens are sent as `Authorization: Bearer <token>` and are never stored in plaintext. Configure their lifetime with `API_AUTH_TOKEN_TTL_SECONDS` (default 1800 seconds). Login attempts use the existing rate-limit table with `API_AUTH_LOGIN_RATE_LIMIT_SECONDS` (default 10 seconds).
+
+Admin replies are persisted before any optional email transport attempt. Email delivery is disabled by default with `REPLY_EMAIL_ENABLED=false`; enabling it requires a valid `REPLY_FROM_EMAIL` and a verified PHP mail transport on the host. No notification record is created for replies in this stage.
 
 ## Validation
 
