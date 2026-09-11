@@ -15,16 +15,30 @@ function migrationError(string $message, ?Throwable $previous = null): never
 
 function migrationFiles(): array
 {
-    $files = glob(__DIR__ . '/migrations/[0-9][0-9][0-9]_*.php') ?: [];
-    sort($files, SORT_STRING);
+    return array_map(
+        static fn (string $file): string => __DIR__ . '/migrations/' . $file . '.php',
+        [
+            'create_backend_foundation',
+            'migrate_contact_messages',
+            'seed_default_admin',
+        ]
+    );
+}
 
-    return $files;
+function migrationId(string $file): string
+{
+    return match (basename($file, '.php')) {
+        'create_backend_foundation' => '001_create_backend_foundation',
+        'migrate_contact_messages' => '002_migrate_contact_messages',
+        'seed_default_admin' => '003_seed_default_admin',
+        default => basename($file, '.php'),
+    };
 }
 
 function loadMigration(string $file): array
 {
     $migration = require $file;
-    $id = basename($file, '.php');
+    $id = migrationId($file);
 
     if (!is_callable($migration)) {
         migrationError('Migration ' . $id . ' must return a callable.');
