@@ -56,7 +56,7 @@ SMTP_USER=
 SMTP_PASS=
 SMTP_ENCRYPTION=tls
 ADMIN_USER=admin
-ADMIN_PASS=use-a-long-random-password
+ADMIN_PASS=use-a-password_hash-value
 ```
 
 The application reads `.env` through `assets/php/db.php`. Production deployments should use a dedicated MySQL account instead of `root`.
@@ -120,7 +120,7 @@ GET  /assets/php/health.php    Check database readiness
 GET  /assets/php/admin.php     Open the administrator dashboard
 ```
 
-The dashboard requires `ADMIN_USER` and `ADMIN_PASS`. The password may be a PHP hash created with `password_hash()`.
+The dashboard requires `ADMIN_USER` and `ADMIN_PASS`. `ADMIN_PASS` must be a PHP password hash created with `password_hash()`; plaintext administrator passwords are not accepted.
 
 The API authentication endpoints use short-lived opaque bearer tokens. Tokens are sent as `Authorization: Bearer <token>` and are never stored in plaintext. Configure their lifetime with `API_AUTH_TOKEN_TTL_SECONDS` (default 1800 seconds). Login attempts use the existing rate-limit table with `API_AUTH_LOGIN_RATE_LIMIT_SECONDS` (default 10 seconds).
 

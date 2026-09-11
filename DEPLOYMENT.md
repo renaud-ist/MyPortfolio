@@ -105,6 +105,8 @@ The current application expects:
 - `ADMIN_USER`
 - `ADMIN_PASS`
 
+`ADMIN_PASS` must contain a PHP password hash generated with `password_hash()`; the legacy dashboard does not accept plaintext administrator passwords.
+
 ### Migration commands
 
 The migration system reuses `assets/php/db.php` and requires PHP 8.1+ with PDO MySQL:

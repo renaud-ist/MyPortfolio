@@ -47,9 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($lockedAt && time() - $lockedAt < $loginLockSeconds) {
             $error = 'Too many failed attempts. Please wait a few minutes.';
         } else {
-            $validPassword = str_starts_with($adminPassword, '$2y$')
-                ? password_verify($password, $adminPassword)
-                : ($adminPassword !== '' && hash_equals($adminPassword, $password));
+            $passwordInfo = password_get_info($adminPassword);
+            $validPassword = $passwordInfo['algo'] !== 0
+                && password_verify($password, $adminPassword);
 
             if ($adminUser !== '' && hash_equals($adminUser, $username) && $validPassword) {
                 session_regenerate_id(true);
@@ -74,7 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $isAuthenticated = !empty($_SESSION['admin_authenticated']);
 $query = trim((string) ($_GET['q'] ?? ''));
-$status = in_array($_GET['status'] ?? 'active', ['active', 'archived', 'all'], true) ? $_GET['status'] : 'active';
+$requestedStatus = $_GET['status'] ?? 'active';
+$status = in_array($requestedStatus, ['active', 'archived', 'all'], true) ? $requestedStatus : 'active';
 $messages = [];
 
 if ($isAuthenticated && $dbReady && $pdo) {

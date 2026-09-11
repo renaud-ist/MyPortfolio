@@ -21,6 +21,7 @@ $adminIds = [];
 $tokenHashes = [];
 $rateKeys = [];
 $authTestRateKeys = [];
+$GLOBALS['preserveAuthRateLimit'] = false;
 
 function check(bool $condition, string $message): void
 {
@@ -34,7 +35,11 @@ function check(bool $condition, string $message): void
 function request(string $url, string $method, ?string $body, string $userAgent, ?string $token = null, string $origin = 'http://localhost:8080', string $contentType = 'application/json'): array
 {
     if (str_contains($url, '/api/auth/login.php')) {
-        $GLOBALS['authTestRateKeys'][] = hash('sha256', 'auth|127.0.0.1|' . $userAgent);
+        $rateKey = hash('sha256', 'auth|127.0.0.1');
+        $GLOBALS['authTestRateKeys'][] = $rateKey;
+        if (!$GLOBALS['preserveAuthRateLimit']) {
+            $GLOBALS['pdo']->prepare('DELETE FROM contact_rate_limits WHERE rate_key = :rate_key')->execute([':rate_key' => $rateKey]);
+        }
     }
 
     $headers = "Accept: application/json\r\nOrigin: {$origin}\r\nUser-Agent: {$userAgent}\r\n";
@@ -197,6 +202,13 @@ try {
 
     [$status, $body, $headersToCheck] = request($meUrl, 'GET', null, $marker . '-cors', $token, 'https://untrusted.example');
     check($status === 403, 'authentication endpoints reject untrusted origins');
+
+    $authRateKey = hash('sha256', 'auth|127.0.0.1');
+    $pdo->prepare('INSERT INTO contact_rate_limits (rate_key, last_submission) VALUES (:rate_key, :last_submission) ON DUPLICATE KEY UPDATE last_submission = VALUES(last_submission)')->execute([':rate_key' => $authRateKey, ':last_submission' => time()]);
+    $GLOBALS['preserveAuthRateLimit'] = true;
+    [$status] = jsonRequest($loginUrl, 'POST', ['email' => $email, 'password' => $password], $marker . '-rotated-user-agent');
+    $GLOBALS['preserveAuthRateLimit'] = false;
+    check($status === 429, 'login throttling is not bypassed by user-agent rotation');
 } finally {
     if ($adminIds !== []) {
         $placeholders = implode(',', array_fill(0, count($adminIds), '?'));

@@ -16,7 +16,7 @@ if ($email === '' || $password === '' || strlen($email) > API_AUTH_MAX_EMAIL_LEN
     authResponse(['ok' => false, 'error' => 'Invalid credentials.'], 401);
 }
 
-$rateKey = hash('sha256', 'auth|' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . '|' . ($_SERVER['HTTP_USER_AGENT'] ?? 'unknown'));
+$rateKey = hash('sha256', 'auth|' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
 $rateLimitSeconds = max(5, (int) (getenv('API_AUTH_LOGIN_RATE_LIMIT_SECONDS') ?: 10));
 $dummyHash = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llCzT8sH7qQ7N6P5Q5Q5O';
 
