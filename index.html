@@ -7,7 +7,7 @@
       name="description"
       content="Yangda Renaud Dimanche is a Master’s graduate in Information Systems and Technology focused on AI, digital transformation, cloud, and business process improvement."
     />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://formspree.io; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://formspree.io;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://127.0.0.1:8090 http://localhost:8090; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self';" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Yangda Renaud Dimanche | Information Systems and Technology" />
     <meta property="og:description" content="Master’s graduate focused on information systems, software development, data management, cloud, and practical digital transformation." />
@@ -19,12 +19,6 @@
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.svg" />
     <link rel="manifest" href="site.webmanifest" />
     <title>Yangda Renaud Dimanche | Tech Strategist</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="assets/css/style.css" />
   </head>
   <body>
@@ -44,6 +38,7 @@
           <a href="#projects">Projects</a>
           <a href="#education">Education</a>
           <a href="#contact">Contact</a>
+          <button type="button" id="adminToggle" class="nav-admin-button" aria-label="Open admin inbox">Admin inbox</button>
         </nav>
 
         <a href="#contact" class="button button-primary">Book a consult</a>
@@ -140,39 +135,6 @@
           </div>
         </section>
 
-        <section class="cv-summary reveal">
-          <div class="section-heading">
-            <p class="eyebrow">Professional summary</p>
-            <h2>Yangda Renaud Dimanche is a Master’s graduate in Information Systems and Technology.</h2>
-          </div>
-
-          <div class="summary-grid">
-            <article class="summary-card">
-              <h3>Profile</h3>
-              <p>
-                I am a Master’s graduate in Information Systems and Technology, with a strong foundation in information systems,
-                systems analysis, database management, and digital transformation.
-              </p>
-            </article>
-
-            <article class="summary-card">
-              <h3>Current focus</h3>
-              <p>
-                Actively learning Artificial Intelligence, Machine Learning, Data Engineering,
-                Cloud Computing, and AI-powered software development to build smarter technical solutions.
-              </p>
-            </article>
-
-            <article class="summary-card">
-              <h3>Career direction</h3>
-              <p>
-                I am focused on improving business operations through systems thinking, software
-                development, project management, and practical digital innovation.
-              </p>
-            </article>
-          </div>
-        </section>
-
         <section class="profile-facts reveal">
           <div class="section-heading">
             <p class="eyebrow">Profile snapshot</p>
@@ -214,37 +176,6 @@
                 <li>Projects: github.com/renaud-ist</li>
                 <li>Fun fact: I think I am funny 😂</li>
               </ul>
-            </article>
-          </div>
-        </section>
-
-        <section class="cv-overview reveal">
-          <div class="section-heading">
-            <p class="eyebrow">CV overview</p>
-            <h2>Professional strengths and academic background.</h2>
-          </div>
-
-          <div class="cv-grid">
-            <article class="glass-card">
-              <h3>Core professional identity</h3>
-              <p>
-                I am a Master’s graduate in Information Systems and Technology with a strong interest in
-                information systems, software development, data management, and operational improvement.
-              </p>
-            </article>
-            <article class="glass-card">
-              <h3>Technology focus</h3>
-              <p>
-                My areas of focus include systems analysis, database management, digital transformation, software
-                development, business process analysis, and project management for technology-driven change.
-              </p>
-            </article>
-            <article class="glass-card">
-              <h3>Academic grounding</h3>
-              <p>
-                My academic background includes study at Nkumba University and the University of N'Djamena,
-                which strengthened my foundation in technology, systems, and problem solving.
-              </p>
             </article>
           </div>
         </section>
@@ -528,6 +459,55 @@
         </section>
       </main>
 
+      <section id="admin-panel" class="admin-panel reveal" aria-live="polite" hidden>
+        <div class="admin-shell">
+          <div class="admin-header">
+            <div>
+              <p class="eyebrow">Portfolio inbox</p>
+              <h3>Admin messaging</h3>
+            </div>
+            <div class="admin-controls">
+              <button type="button" id="notificationBell" class="admin-bell" aria-expanded="false" aria-label="Open admin notifications">
+                <span aria-hidden="true">🔔</span>
+                <span id="notificationCount" class="notification-count" aria-live="polite">0</span>
+              </button>
+              <button type="button" id="adminLogoutBtn" class="button button-secondary admin-logout" hidden>Sign out</button>
+            </div>
+          </div>
+
+          <div id="adminLoginSection" class="admin-login-panel">
+            <form id="adminLoginForm" class="admin-login-form" novalidate>
+              <label>
+                Admin email
+                <input id="adminEmail" type="email" name="email" autocomplete="email" placeholder="admin@example.com" required />
+              </label>
+              <label>
+                Password
+                <input id="adminPassword" type="password" name="password" autocomplete="current-password" placeholder="Enter password" required />
+              </label>
+              <button type="submit" class="button button-primary">Sign in</button>
+              <p id="adminLoginStatus" class="form-status" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div id="adminDashboardSection" class="admin-dashboard-panel" hidden>
+            <div id="notificationDropdown" class="notification-dropdown" aria-live="polite">
+              <div class="notification-header-row">
+                <strong>Notifications</strong>
+              </div>
+              <ul id="notificationList" class="notification-list" aria-label="Admin notifications"></ul>
+            </div>
+
+            <div id="conversationPanel" class="conversation-panel" aria-live="polite">
+              <div class="conversation-empty">
+                <h4>No conversation selected</h4>
+                <p>Select a notification from the inbox to view the full message thread.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <footer id="contact" class="footer reveal">
         <div class="footer-grid">
           <div>
@@ -544,9 +524,9 @@
   id="contactForm"
   class="contact-card"
   method="POST"
-  action="https://formspree.io/f/xdeowqyv"
+  action="api/contact.php"
 >
-                        <label class="honeypot" aria-hidden="true">
+            <label class="honeypot" aria-hidden="true">
               Website
               <input type="text" name="website" tabindex="-1" autocomplete="off" />
             </label>
@@ -557,6 +537,10 @@
             <label>
               Email
               <input type="email" name="email" placeholder="you@example.com" maxlength="180" required />
+            </label>
+            <label>
+              Subject
+              <input type="text" name="subject" placeholder="How can I help?" maxlength="255" />
             </label>
             <label>
               Message

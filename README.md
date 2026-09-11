@@ -138,50 +138,35 @@ php tests/smoke.php http://127.0.0.1:8080
 
 The checks cover the portfolio entry point, health endpoint, CSRF endpoint, admin route, manifest, robots file, contact validation, and CSRF rejection.
 
-## Deployment notes
-
-For production:
-
-- Use HTTPS.
-- Use Apache or Nginx with PHP support.
-- Keep `.env` outside public access where possible.
-- Keep `.htaccess` enabled when using Apache.
-- Use a dedicated database user with limited permissions.
-- Configure SMTP through a mail library such as PHPMailer for reliable notifications.
-- Set a strong administrator password hash.
-- Back up the MySQL database and test restoration.
-- Review contact-message retention and privacy requirements.
-
-The portfolio describes verified academic and service experience. Project repositories, screenshots, live demos, employment history, and certifications should only be added when their details can be verified.
-
-## Production deployment
+## Deployment guide
 
 ### Requirements
 
-- PHP 8.1 or newer. The code uses typed return declarations and `str_starts_with()`.
-- PHP extensions: PDO, PDO MySQL, JSON, Filter, and OpenSSL.
-- MySQL 8.0 or newer is the tested production target.
-- Apache 2.4 with `mod_headers` and `mod_rewrite`, or Nginx configured to route PHP files to PHP-FPM.
-- HTTPS for production. The application uses secure session cookies automatically when HTTPS is detected.
+- PHP 8.1 or newer with PDO, PDO MySQL, JSON, Filter, OpenSSL, and Session.
+- MySQL 8.0 or newer.
+- Apache 2.4 with `mod_headers` and `mod_rewrite`, or Nginx with PHP-FPM.
+- HTTPS in production.
+- A protected `.env` or equivalent environment-variable configuration.
+- A restricted application database user. Do not use the administrative MySQL account at runtime.
 
-There are no file uploads, cron jobs, background workers, or application-owned writable directories. File fallback is disabled by default. If explicitly enabled for local development, it writes to the operating system temporary directory.
+The application has no file uploads, cron jobs, background workers, or application-owned writable directories. File fallback is disabled by default.
 
-### Recommended deployment shape
+### Hosting model
 
-The current application must run on a PHP-capable host:
+The current application must run on PHP-capable hosting:
 
 ```text
 https://your-domain.example/
-	|
-	v
+        |
+        v
 PHP application -> PDO -> MySQL
 ```
 
-GitHub Pages cannot execute PHP. It may host a separate static copy of the frontend, but the current same-origin session, CSRF, and contact API design is not a GitHub Pages deployment. A split GitHub Pages frontend plus external PHP API would require CORS, cross-origin cookie, CSRF, and API URL changes, so it is intentionally not implemented.
+GitHub Pages cannot execute PHP or access MySQL. It may host a separate display-only frontend, but the current contact form, admin authentication, CSRF, and messaging features require the PHP application and database. A split frontend/API deployment would require deliberate CORS, API URL, cookie, and CSRF changes and is not the current architecture.
 
-### Database and application user
+### Database setup
 
-Use an administrative MySQL account only to create the database and restricted application user. Do not put the administrative account in the application environment.
+Use an administrative MySQL account only to create the database and restricted application user:
 
 ```sql
 CREATE DATABASE portfolio_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -190,37 +175,40 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON portfolio_db.* TO 'portfolio_app'@'local
 FLUSH PRIVILEGES;
 ```
 
-Import `setup.sql` after creating the database, then configure the application with the restricted user:
+Import `setup.sql`, create `.env` from `.env.example`, and configure the restricted user. Never commit production credentials.
 
-```text
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME=portfolio_db
-DB_USER=portfolio_app
-DB_PASS=the-secret-held-by-your-host
+Run the migration and verification commands from the project root:
+
+```powershell
+php database/migrate.php status
+php database/migrate.php migrate
+php database/migrate.php verify
+php tests/migrations.php
 ```
 
-Never commit those values. The repository contains no production credentials.
+Migrations preserve the legacy `contact_messages` table and copy existing records into the conversation tables without duplicating them on a safe rerun.
 
 ### Deployment steps
 
-1. Upload or clone the project outside any unrelated public directory.
-2. Set the web document root to the project directory, or to a configured public directory that can serve `index.php` and the `assets` folder.
+1. Upload or clone the project to the PHP host.
+2. Point the web document root at the application directory or an equivalent configured public directory.
 3. Create the restricted MySQL user and import `setup.sql`.
-4. Create `.env` from `.env.example` using deployment-specific values.
+4. Create `.env` with deployment-specific values.
 5. Set `APP_ENV=production` and `APP_DEBUG=false`.
-6. Configure `ADMIN_USER` and a `password_hash()` value in `ADMIN_PASS`.
-7. Keep `.htaccess` enabled under Apache. Under Nginx, reproduce its protections by denying access to `.env`, `setup.sql`, `resume`, `tests`, `extract_cv.py`, and repository metadata.
-8. Enable HTTPS and redirect HTTP to HTTPS at the web server.
-9. Configure backups for MySQL and test restoring one backup before launch.
+6. Set `ADMIN_USER` and a `password_hash()` value in `ADMIN_PASS`.
+7. Keep `.htaccess` enabled under Apache. Under Nginx, deny access to `.env`, `setup.sql`, `resume`, `tests`, `extract_cv.py`, and repository metadata.
+8. Enable HTTPS and redirect HTTP to HTTPS.
+9. Back up MySQL and test restoring a backup before launch.
 
-### Notifications
+### Notifications and messaging
 
-Contact records are persisted in MySQL first. The current optional notification hook uses PHP `mail()` when `CONTACT_NOTIFICATION_EMAIL` is configured; SMTP variables are not consumed by the current application. Reliable SMTP delivery is therefore **not verified** and requires a mail library and provider configuration before production notification guarantees can be made.
+Contact records are persisted in MySQL before optional notification delivery. `REPLY_EMAIL_ENABLED=false` is the default. The current optional contact notification uses PHP `mail()` when `CONTACT_NOTIFICATION_EMAIL` is configured; SMTP variables are not consumed by the current application. Reliable production email delivery is therefore not verified and requires a working mail transport or mail library.
 
-### Verification checklist
+Admin replies are stored in `conversation_messages` before the optional email attempt. Authentication uses short-lived opaque bearer tokens; raw tokens are returned once at login and are not stored in the database.
 
-After deployment, verify:
+### Verification
+
+After deployment, verify the homepage, health endpoint, CSRF endpoint, admin route, contact submission, and protected messaging flow:
 
 ```text
 GET /index.php
@@ -230,14 +218,23 @@ GET /assets/php/admin.php
 POST /assets/php/contact.php
 ```
 
-Confirm the homepage loads over HTTPS, the health endpoint reports connected tables, the contact form creates a MySQL row, the admin login and message controls work, invalid CSRF requests are rejected, and server errors are logged without being displayed to visitors.
-
-The local smoke command remains:
+Run the smoke checks against the deployed host:
 
 ```powershell
 php tests/smoke.php https://your-deployed-host.example
 ```
 
-### Rollback
+Confirm HTTPS, database readiness, contact persistence, admin authentication, conversation access, reply persistence, CSRF rejection, and generic production error responses.
 
-Keep the previous application release available, deploy new code to a versioned directory, and switch the web-server document root only after health checks pass. Before schema changes, take a database backup. Roll back application code first if the schema remains compatible; restore the database backup only when a schema change itself must be reversed.
+### Security and rollback
+
+- Keep `.env` private; it is ignored by the project configuration.
+- Use HTTPS and secure cookies.
+- Keep CORS restricted to explicitly trusted origins.
+- Keep credentials out of source control.
+- Review message retention and privacy requirements.
+- Keep the previous release available and deploy new code to a versioned directory.
+- Run health checks before switching the document root.
+- Roll back application code first when the schema remains compatible; restore the database backup only when a schema change must be reversed.
+
+The portfolio describes verified academic and service experience. Add repositories, screenshots, live demos, employment history, or certifications only when their details can be verified.
