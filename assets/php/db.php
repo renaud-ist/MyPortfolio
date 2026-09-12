@@ -1,29 +1,53 @@
 <?php
-$appEnv = strtolower((string) (getenv('APP_ENV') ?: 'production'));
-$appDebug = filter_var(getenv('APP_DEBUG') ?: '0', FILTER_VALIDATE_BOOLEAN);
-
-if ($appEnv === 'production' || !$appDebug) {
-    ini_set('display_errors', '0');
-    ini_set('display_startup_errors', '0');
-    ini_set('log_errors', '1');
-}
+declare(strict_types=1);
 
 $envPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . '.env';
 
-if (is_readable($envPath)) {
-    $envValues = parse_ini_file($envPath, false, INI_SCANNER_RAW);
+$envValues = [];
 
-    if (is_array($envValues)) {
+if (is_readable($envPath)) {
+    $parsedEnv = parse_ini_file($envPath, false, INI_SCANNER_RAW);
+
+    if (is_array($parsedEnv)) {
+        $envValues = $parsedEnv;
+
+        // Populate the process environment only when a variable
+        // has not already been provided by the server.
         foreach ($envValues as $key => $value) {
-            if (is_string($key) && is_scalar($value) && getenv($key) === false) {
+            if (
+                is_string($key)
+                && is_scalar($value)
+                && getenv($key) === false
+            ) {
                 putenv($key . '=' . (string) $value);
             }
         }
     }
 }
 
-$appEnv = strtolower((string) (getenv('APP_ENV') ?: $appEnv));
-$appDebug = filter_var(getenv('APP_DEBUG') ?: ($appDebug ? '1' : '0'), FILTER_VALIDATE_BOOLEAN);
+/*
+ * Prefer values explicitly loaded from the application's .env file.
+ * Fall back to server environment variables, then safe defaults.
+ */
+$getEnvValue = static function (string $key, string $default = '') use ($envValues): string {
+    if (array_key_exists($key, $envValues) && is_scalar($envValues[$key])) {
+        return (string) $envValues[$key];
+    }
+
+    $environmentValue = getenv($key);
+
+    if ($environmentValue !== false) {
+        return (string) $environmentValue;
+    }
+
+    return $default;
+};
+
+$appEnv = strtolower($getEnvValue('APP_ENV', 'production'));
+$appDebug = filter_var(
+    $getEnvValue('APP_DEBUG', '0'),
+    FILTER_VALIDATE_BOOLEAN
+);
 
 if ($appEnv === 'production' || !$appDebug) {
     ini_set('display_errors', '0');
@@ -31,14 +55,15 @@ if ($appEnv === 'production' || !$appDebug) {
     ini_set('log_errors', '1');
 }
 
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = (int) (getenv('DB_PORT') ?: 3306);
-$dbName = getenv('DB_NAME') ?: 'portfolio_db';
-$dbUser = getenv('DB_USER') ?: 'root';
-$dbPass = getenv('DB_PASS') ?: '';
+$host = $getEnvValue('DB_HOST', '127.0.0.1');
+$port = (int) $getEnvValue('DB_PORT', '3306');
+$dbName = $getEnvValue('DB_NAME', 'portfolio_db');
+$dbUser = $getEnvValue('DB_USER', 'root');
+$dbPass = $getEnvValue('DB_PASS', '');
 
 $dbReady = false;
 $dbError = null;
+$pdo = null;
 
 try {
     $pdo = new PDO(
@@ -52,9 +77,8 @@ try {
             PDO::ATTR_TIMEOUT => 5,
         ]
     );
+
     $dbReady = true;
 } catch (PDOException $e) {
     $dbError = $e->getMessage();
-    $pdo = null;
 }
-?>

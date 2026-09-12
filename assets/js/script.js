@@ -119,7 +119,17 @@ const statusBox = document.querySelector('.form-status');
 const API_BASE_URL = (() => {
   const host = window.location.hostname;
   const isLocal = host === '127.0.0.1' || host === 'localhost';
-  return isLocal ? 'http://127.0.0.1:8090' : window.location.origin;
+  const isGitHubPages = host === 'renaud-ist.github.io';
+
+  if (isLocal) {
+    return 'http://127.0.0.1:8090';
+  }
+
+  if (isGitHubPages) {
+    return 'https://renaudportfolio.rf.gd';
+  }
+
+  return window.location.origin;
 })();
 
 const safeText = (value) => value == null ? '' : String(value).replace(/\s+/g, ' ').trim();
