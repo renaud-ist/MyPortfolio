@@ -1,4 +1,4 @@
-Options -Indexes
+﻿Options -Indexes
 
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
@@ -13,5 +13,6 @@ Options -Indexes
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteRule ^(?:\.git|tests|extract_cv\.py)(?:/|$) - [F,L]
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+  RewriteRule ^(?:\.git|tests|database|extract_cv\.py)(?:/|$) - [F,L]
 </IfModule>
