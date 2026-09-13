@@ -126,7 +126,7 @@ const API_BASE_URL = (() => {
   }
 
   if (isGitHubPages) {
-    return 'https://renaudportfolio.rf.gd';
+    return 'https://myportfolio.byethost10.com';
   }
 
   return window.location.origin;
@@ -772,3 +772,4 @@ initializeAdmin();
 renderAdminState();
 renderConversation();
 renderNotificationCount();
+
