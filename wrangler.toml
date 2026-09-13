@@ -1,0 +1,8 @@
+name = "myportfolio-api-proxy"
+main = "cloudflare/src/index.js"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "myportfolio-db"
+database_id = "382fd818-7124-474c-8170-22784eae3e83"
+migrations_dir = "cloudflare/migrations"
