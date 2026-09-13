@@ -26,13 +26,17 @@ function apiResponse(array $payload, int $status = 200): never
 function allowedOrigins(): array
 {
     $configured = trim((string) (getenv('CONTACT_ALLOWED_ORIGINS') ?: ''));
+    $productionOrigin = 'https://renaud-ist.github.io';
     $origins = $configured === ''
         ? [
-            'https://renaud-ist.github.io',
+            $productionOrigin,
             'http://localhost:8080',
             'http://127.0.0.1:8080',
         ]
-        : preg_split('/\s*,\s*/', $configured, -1, PREG_SPLIT_NO_EMPTY);
+        : array_merge(
+            preg_split('/\s*,\s*/', $configured, -1, PREG_SPLIT_NO_EMPTY),
+            [$productionOrigin]
+        );
 
     return array_values(array_unique(array_filter($origins, static fn (mixed $origin): bool => is_string($origin) && filter_var($origin, FILTER_VALIDATE_URL))));
 }
