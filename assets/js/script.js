@@ -139,6 +139,10 @@ const mapApiError = (error, fallback) => {
     return fallback;
   }
 
+  if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+    return 'The messaging server could not be reached. Check the backend CORS and HTTPS configuration.';
+  }
+
   if (error.status === 401) {
     return 'Your session has expired. Please sign in again.';
   }
@@ -256,6 +260,8 @@ const adminLoginSection = document.getElementById('adminLoginSection');
 const adminDashboardSection = document.getElementById('adminDashboardSection');
 const adminLoginForm = document.getElementById('adminLoginForm');
 const adminLoginStatus = document.getElementById('adminLoginStatus');
+const adminPasswordInput = document.getElementById('adminPassword');
+const toggleAdminPassword = document.getElementById('toggleAdminPassword');
 const adminLogoutBtn = document.getElementById('adminLogoutBtn');
 const notificationBell = document.getElementById('notificationBell');
 const notificationDropdown = document.getElementById('notificationDropdown');
@@ -723,6 +729,16 @@ if (adminLoginForm) {
     } finally {
       submitButton.disabled = false;
     }
+  });
+}
+
+if (toggleAdminPassword && adminPasswordInput) {
+  toggleAdminPassword.addEventListener('click', () => {
+    const isVisible = adminPasswordInput.type === 'text';
+    adminPasswordInput.type = isVisible ? 'password' : 'text';
+    toggleAdminPassword.textContent = isVisible ? 'Show password' : 'Hide password';
+    toggleAdminPassword.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
+    toggleAdminPassword.setAttribute('aria-pressed', String(!isVisible));
   });
 }
 

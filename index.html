@@ -484,7 +484,10 @@
               </label>
               <label>
                 Password
-                <input id="adminPassword" type="password" name="password" autocomplete="current-password" placeholder="Enter password" required />
+                <span class="password-field">
+                  <input id="adminPassword" type="password" name="password" autocomplete="current-password" placeholder="Enter password" required />
+                  <button type="button" id="toggleAdminPassword" class="password-toggle" aria-label="Show password" aria-controls="adminPassword" aria-pressed="false">Show password</button>
+                </span>
               </label>
               <button type="submit" class="button button-primary">Sign in</button>
               <p id="adminLoginStatus" class="form-status" aria-live="polite"></p>
