@@ -464,7 +464,8 @@
           <div class="admin-header">
             <div>
               <p class="eyebrow">Portfolio inbox</p>
-              <h3>Admin messaging</h3>
+              <h3>Messages</h3>
+              <p class="admin-subtitle">Review visitor conversations and reply from one place.</p>
             </div>
             <div class="admin-controls">
               <button type="button" id="notificationBell" class="admin-bell" aria-expanded="false" aria-label="Open admin notifications">
@@ -494,15 +495,34 @@
             <div id="notificationDropdown" class="notification-dropdown" aria-live="polite">
               <div class="notification-header-row">
                 <strong>Notifications</strong>
+                <span>New visitor activity</span>
               </div>
               <ul id="notificationList" class="notification-list" aria-label="Admin notifications"></ul>
             </div>
 
-            <div id="conversationPanel" class="conversation-panel" aria-live="polite">
-              <div class="conversation-empty">
-                <h4>No conversation selected</h4>
-                <p>Select a notification from the inbox to view the full message thread.</p>
-              </div>
+            <div class="inbox-layout">
+              <section class="conversation-list-panel" aria-labelledby="inboxHeading">
+                <div class="conversation-list-header">
+                  <div>
+                    <p class="eyebrow">Inbox</p>
+                    <h4 id="inboxHeading">Conversations</h4>
+                  </div>
+                  <span id="inboxCount" class="inbox-count" aria-live="polite">0</span>
+                </div>
+                <p id="conversationListStatus" class="conversation-list-status" aria-live="polite"></p>
+                <div id="conversationList" class="conversation-list" role="list" aria-label="Conversations"></div>
+              </section>
+
+              <section class="conversation-detail-panel" aria-labelledby="conversationHeading">
+                <button type="button" id="conversationBackBtn" class="conversation-back button button-secondary" hidden>Back to conversations</button>
+                <div id="conversationPanel" class="conversation-panel" aria-live="polite">
+                  <div class="conversation-empty">
+                    <span class="conversation-empty-mark" aria-hidden="true">↗</span>
+                    <h4 id="conversationHeading">Select a conversation</h4>
+                    <p>Choose a visitor message from the inbox to read the full thread.</p>
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
         </div>

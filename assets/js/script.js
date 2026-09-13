@@ -261,6 +261,10 @@ const notificationBell = document.getElementById('notificationBell');
 const notificationDropdown = document.getElementById('notificationDropdown');
 const notificationList = document.getElementById('notificationList');
 const notificationCount = document.getElementById('notificationCount');
+const inboxCount = document.getElementById('inboxCount');
+const conversationList = document.getElementById('conversationList');
+const conversationListStatus = document.getElementById('conversationListStatus');
+const conversationBackBtn = document.getElementById('conversationBackBtn');
 const conversationPanel = document.getElementById('conversationPanel');
 
 const storageKey = 'portfolio_admin_session';
@@ -340,6 +344,9 @@ const renderNotificationCount = () => {
   const count = adminState.notifications.filter((item) => item && item.status === 'pending').length;
   notificationCount.textContent = String(count);
   notificationCount.hidden = count === 0;
+  if (inboxCount) {
+    inboxCount.textContent = String(adminState.notifications.length);
+  }
 };
 
 const renderAdminState = () => {
@@ -352,16 +359,20 @@ const renderAdminState = () => {
   if (!isAuthenticated) {
     notificationDropdown.classList.remove('is-open');
     notificationList.innerHTML = '';
+    if (conversationList) conversationList.innerHTML = '';
+    if (conversationListStatus) conversationListStatus.textContent = '';
     renderNotificationCount();
   }
 };
 
 const renderConversation = () => {
   if (!adminState.selectedConversationId) {
+    conversationDetailState(false);
     conversationPanel.innerHTML = `
       <div class="conversation-empty">
+        <span class="conversation-empty-mark" aria-hidden="true">↗</span>
         <h4>No conversation selected</h4>
-        <p>Select a notification from the inbox to view the full message thread.</p>
+        <p>Select a visitor message from the inbox to view the full thread.</p>
       </div>
     `;
     return;
@@ -369,8 +380,10 @@ const renderConversation = () => {
 
   const conversation = adminState.conversation;
   if (!conversation) {
+    conversationDetailState(true);
     conversationPanel.innerHTML = `
       <div class="conversation-empty">
+        <span class="conversation-empty-mark" aria-hidden="true">!</span>
         <h4>Conversation unavailable</h4>
         <p>The selected conversation could not be loaded right now.</p>
       </div>
@@ -400,18 +413,22 @@ const renderConversation = () => {
 
   const visitorEmail = summary.contact_email ? ` · ${summary.contact_email}` : '';
   const status = summary.status || 'open';
+  conversationDetailState(true);
 
   conversationPanel.innerHTML = `
     <div class="conversation-shell">
       <div class="conversation-summary">
         <div class="conversation-summary-header">
+          <div>
+            <p class="eyebrow">Conversation</p>
+            <h4 id="conversationHeading">${escapeHtml(summary.subject || 'Visitor message')}</h4>
+          </div>
           <div class="conversation-status-badge">${escapeHtml(status)}</div>
         </div>
         <div class="conversation-summary-grid">
-          <div><strong>Visitor</strong><br>${escapeHtml(summary.contact_name || 'Unknown visitor')}${escapeHtml(visitorEmail)}</div>
-          <div><strong>Subject</strong><br>${escapeHtml(summary.subject || 'No subject')}</div>
-          <div><strong>Created</strong><br>${escapeHtml(formatTime(summary.created_at))}</div>
-          <div><strong>Last update</strong><br>${escapeHtml(formatTime(summary.last_message_at || summary.updated_at))}</div>
+          <div><span>From</span><strong>${escapeHtml(summary.contact_name || 'Unknown visitor')}</strong><small>${escapeHtml(summary.contact_email || '')}</small></div>
+          <div><span>Created</span><strong>${escapeHtml(formatTime(summary.created_at))}</strong></div>
+          <div><span>Last update</span><strong>${escapeHtml(formatTime(summary.last_message_at || summary.updated_at))}</strong></div>
         </div>
       </div>
 
@@ -477,6 +494,13 @@ const renderConversation = () => {
   });
 };
 
+const conversationDetailState = (isOpen) => {
+  if (!conversationBackBtn) return;
+  conversationBackBtn.hidden = !isOpen;
+  adminDashboardSection.classList.toggle('conversation-open', isOpen);
+  conversationPanel.classList.toggle('is-active', isOpen);
+};
+
 const escapeHtml = (value = '') => value
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
@@ -487,6 +511,51 @@ const escapeHtml = (value = '') => value
 const openNotificationDropdown = () => {
   notificationDropdown.classList.toggle('is-open');
   notificationBell.setAttribute('aria-expanded', String(notificationDropdown.classList.contains('is-open')));
+};
+
+const renderConversationList = () => {
+  if (!conversationList) return;
+
+  if (adminState.notifications.length === 0) {
+    conversationList.innerHTML = `
+      <div class="conversation-list-empty">
+        <span aria-hidden="true">✓</span>
+        <strong>Your inbox is clear</strong>
+        <p>New visitor messages will appear here.</p>
+      </div>
+    `;
+    return;
+  }
+
+  conversationList.innerHTML = adminState.notifications.map((item) => {
+    const conversationId = escapeHtml(item.conversation_id || '');
+    const isSelected = String(item.conversation_id || '') === String(adminState.selectedConversationId || '');
+    const isPending = item.status === 'pending';
+    return `
+      <button type="button" class="conversation-list-item${isSelected ? ' is-selected' : ''}${isPending ? ' is-unread' : ''}" data-conversation-id="${conversationId}">
+        <span class="conversation-list-item-topline">
+          <strong>${escapeHtml(item.contact_name || 'Visitor enquiry')}</strong>
+          <time>${escapeHtml(formatTime(item.created_at || item.sent_at))}</time>
+        </span>
+        <span class="conversation-list-item-email">${escapeHtml(item.contact_email || 'Visitor message')}</span>
+        <span class="conversation-list-item-subject">${escapeHtml(item.subject || 'No subject')}</span>
+        <span class="conversation-list-item-preview">${escapeHtml(item.latest_message_preview || 'Open to read the visitor message.')}</span>
+        ${isPending ? '<span class="conversation-list-item-status">New</span>' : ''}
+      </button>
+    `;
+  }).join('');
+};
+
+const bindConversationButtons = (container) => {
+  container?.querySelectorAll('[data-conversation-id]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const conversationId = button.getAttribute('data-conversation-id');
+      if (!conversationId) return;
+      await loadConversation(conversationId, true);
+      notificationDropdown.classList.remove('is-open');
+      notificationBell.setAttribute('aria-expanded', 'false');
+    });
+  });
 };
 
 const fetchNotifications = async () => {
@@ -507,6 +576,7 @@ const fetchNotifications = async () => {
 
     adminState.notifications = Array.isArray(result.data) ? result.data : [];
     renderNotificationCount();
+    renderConversationList();
 
     if (!notificationList) {
       return;
@@ -523,20 +593,11 @@ const fetchNotifications = async () => {
           </button>
         </li>
       `).join('');
-
-    notificationList.querySelectorAll('[data-conversation-id]').forEach((button) => {
-      button.addEventListener('click', async () => {
-        const conversationId = button.getAttribute('data-conversation-id');
-        if (!conversationId) {
-          return;
-        }
-        await loadConversation(conversationId, true);
-        notificationDropdown.classList.remove('is-open');
-        notificationBell.setAttribute('aria-expanded', 'false');
-      });
-    });
+    bindConversationButtons(notificationList);
+    bindConversationButtons(conversationList);
   } catch (error) {
     console.error('Failed to fetch notifications:', error);
+    if (conversationListStatus) conversationListStatus.textContent = mapApiError(error, 'Unable to load conversations.');
     setStatus(adminLoginStatus, mapApiError(error, 'Unable to load notifications.'), 'error');
   }
 };
@@ -545,6 +606,8 @@ const loadConversation = async (conversationId, shouldRefreshNotifications = fal
   if (!conversationId) {
     return;
   }
+
+  if (conversationListStatus) conversationListStatus.textContent = 'Loading conversation...';
 
   try {
     const result = await apiRequest(`${API_BASE_URL}/api/conversation.php?id=${encodeURIComponent(conversationId)}`, {
@@ -559,6 +622,8 @@ const loadConversation = async (conversationId, shouldRefreshNotifications = fal
 
     adminState.selectedConversationId = conversationId;
     adminState.conversation = result;
+    if (conversationListStatus) conversationListStatus.textContent = '';
+    renderConversationList();
     renderConversation();
     if (shouldRefreshNotifications) {
       await fetchNotifications();
@@ -566,6 +631,7 @@ const loadConversation = async (conversationId, shouldRefreshNotifications = fal
     return true;
   } catch (error) {
     console.error('Conversation load failed:', error);
+    if (conversationListStatus) conversationListStatus.textContent = mapApiError(error, 'The conversation could not be loaded.');
     setStatus(adminLoginStatus, mapApiError(error, 'The selected conversation is unavailable.'), 'error');
     return false;
   }
@@ -607,6 +673,15 @@ if (notificationBell) {
     }
     openNotificationDropdown();
     fetchNotifications();
+  });
+}
+
+if (conversationBackBtn) {
+  conversationBackBtn.addEventListener('click', () => {
+    adminState.selectedConversationId = null;
+    adminState.conversation = null;
+    renderConversationList();
+    renderConversation();
   });
 }
 
