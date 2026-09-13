@@ -1,5 +1,6 @@
 name = "myportfolio-api-proxy"
 main = "cloudflare/src/index.js"
+compatibility_date = "2026-09-13"
 
 [[d1_databases]]
 binding = "DB"
