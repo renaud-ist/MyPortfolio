@@ -231,12 +231,12 @@ if (form) {
         message,
       };
 
-      const result = await apiRequest(`${API_BASE_URL}/api/contact.php`, {
+      const result = await apiRequest('https://myportfolio-api-proxy.yangdarenaud893.workers.dev/api/contact', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
 
-      if (!result || result.success !== true) {
+      if (!result || result.ok !== true) {
         throw new Error(result && (result.message || 'Message submission failed.'));
       }
 
