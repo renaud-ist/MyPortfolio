@@ -126,7 +126,7 @@ const API_BASE_URL = (() => {
   }
 
   if (isGitHubPages) {
-    return 'https://renaudportfolio.rf.gd';
+    return 'https://myportfolio-api-proxy.yangdarenaud893.workers.dev';
   }
 
   return window.location.origin;
@@ -452,7 +452,7 @@ const renderConversation = () => {
     setStatus(replyStatus, 'Sending reply...', '');
 
     try {
-      const result = await apiRequest(`${API_BASE_URL}/api/conversation/reply.php?id=${summary.id}`, {
+      const result = await apiRequest(`${API_BASE_URL}/api/conversation/reply?id=${summary.id}`, {
         method: 'POST',
         body: JSON.stringify({ body }),
         headers: { Authorization: `Bearer ${adminState.token}` },
@@ -495,7 +495,7 @@ const fetchNotifications = async () => {
   }
 
   try {
-    const result = await apiRequest(`${API_BASE_URL}/api/notifications.php?page=1&per_page=20`, {
+    const result = await apiRequest(`${API_BASE_URL}/api/notifications?page=1&per_page=20`, {
       headers: {
         Authorization: `Bearer ${adminState.token}`,
       },
@@ -547,7 +547,7 @@ const loadConversation = async (conversationId, shouldRefreshNotifications = fal
   }
 
   try {
-    const result = await apiRequest(`${API_BASE_URL}/api/conversation.php?id=${encodeURIComponent(conversationId)}`, {
+    const result = await apiRequest(`${API_BASE_URL}/api/conversation?id=${encodeURIComponent(conversationId)}`, {
       headers: {
         Authorization: `Bearer ${adminState.token}`,
       },
@@ -627,7 +627,7 @@ if (adminLoginForm) {
     setStatus(adminLoginStatus, 'Signing in...', '');
 
     try {
-      const result = await apiRequest(`${API_BASE_URL}/api/auth/login.php`, {
+      const result = await apiRequest(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
@@ -659,7 +659,7 @@ if (adminLogoutBtn) {
     }
 
     try {
-      await apiRequest(`${API_BASE_URL}/api/auth/logout.php`, {
+      await apiRequest(`${API_BASE_URL}/api/auth/logout`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${adminState.token}`,
