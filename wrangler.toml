@@ -7,3 +7,6 @@ binding = "DB"
 database_name = "myportfolio-db"
 database_id = "382fd818-7124-474c-8170-22784eae3e83"
 migrations_dir = "cloudflare/migrations"
+
+[vars]
+REPLY_FROM_EMAIL = "yangdarenaud893@gmail.com"

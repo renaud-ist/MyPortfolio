@@ -33,3 +33,6 @@ __pycache__/
 sessions/
 *.session
 .wrangler/
+.dev.vars
+.dev.vars.*
+node_modules/

@@ -61,6 +61,12 @@ ADMIN_PASS=use-a-password_hash-value
 
 The application reads `.env` through `assets/php/db.php`. Production deployments should use a dedicated MySQL account instead of `root`.
 
+### Cloudflare Worker configuration
+
+The Cloudflare Worker uses the D1 binding configured in `wrangler.toml` and reads the Brevo API key from the Worker secret `BREVO_API_KEY`. Configure the verified Brevo sender as the non-secret Worker variable `REPLY_FROM_EMAIL`; optionally set `REPLY_FROM_NAME` for the sender display name. Never put the Brevo API key in source code, `wrangler.toml`, frontend JavaScript, or committed files.
+
+For local Worker development, provide the same variable names through Wrangler's local secret/environment mechanism. The Worker persists an admin reply before attempting email delivery and reports `not_configured`, `provider_error`, `network_error`, or `sent` without exposing provider details to the browser.
+
 ## Database setup
 
 Create the database and tables with MySQL:
@@ -120,11 +126,27 @@ GET  /assets/php/health.php    Check database readiness
 GET  /assets/php/admin.php     Open the administrator dashboard
 ```
 
+The Cloudflare Worker routes used by the GitHub Pages frontend are:
+
+```text
+POST   /api/contact
+POST   /api/auth/login
+POST   /api/auth/logout
+GET    /api/auth/me
+GET    /api/conversations
+GET    /api/conversation?id=<id>
+PATCH  /api/conversation?id=<id>
+DELETE /api/conversation?id=<id>
+POST   /api/conversation/reply?id=<id>
+GET    /api/notifications
+DELETE /api/notifications?id=<id>
+```
+
 The dashboard requires `ADMIN_USER` and `ADMIN_PASS`. `ADMIN_PASS` must be a PHP password hash created with `password_hash()`; plaintext administrator passwords are not accepted.
 
 The API authentication endpoints use short-lived opaque bearer tokens. Tokens are sent as `Authorization: Bearer <token>` and are never stored in plaintext. Configure their lifetime with `API_AUTH_TOKEN_TTL_SECONDS` (default 1800 seconds). Login attempts use the existing rate-limit table with `API_AUTH_LOGIN_RATE_LIMIT_SECONDS` (default 10 seconds).
 
-Admin replies are persisted before any optional email transport attempt. Email delivery is disabled by default with `REPLY_EMAIL_ENABLED=false`; enabling it requires a valid `REPLY_FROM_EMAIL` and a verified PHP mail transport on the host. No notification record is created for replies in this stage.
+Admin replies are persisted before the optional Brevo email attempt. Email delivery is reported as not configured until `BREVO_API_KEY` and a verified `REPLY_FROM_EMAIL` are available to the Worker. A provider or network failure does not roll back the stored reply; the API returns an accurate delivery status. Admin replies create a pending `new_admin_reply` notification for the inbox.
 
 Notifications use the existing `recipient_type=admin`, `notification_type=new_contact_message`, and `status=pending` conventions. `GET /api/notifications.php` is authenticated and paginated. The current schema has no notification read-state or per-admin owner field, so Stage 7 does not expose read/unread mutation or claim per-admin notification ownership.
 
