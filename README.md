@@ -1,132 +1,73 @@
-# YRD Portfolio
+# MyPortfolio backend API
 
-A personal portfolio for Yangda Renaud Dimanche, a Master's graduate in Information Systems and Technology. The site presents academic work, technical interests, systems thinking, and a practical way to make contact.
+This repository is the production backend for the MyPortfolio frontend. The currently verified architecture is:
 
-## What the site contains
+- Frontend: GitHub Pages
+- API: Cloudflare Worker
+- Database: Cloudflare D1
+- Email delivery: Brevo via Worker secret configuration
 
-- A responsive portfolio interface built with HTML and CSS
-- Progressive JavaScript interactions and reduced-motion support
-- CV-based education, projects, service experience, technologies, languages, and interests
-- Project category filtering
-- Downloadable CV
-- Social and professional profile links
-- A PHP contact API backed by MySQL
-- CSRF protection, input validation, honeypot protection, and rate limiting
-- A protected administrator dashboard for managing contact messages
-- Health checks, CSV export, archive controls, and smoke tests
-- Web app metadata, icons, crawler rules, and Apache hardening
+The Worker is the authoritative backend. The older PHP/MySQL implementation is legacy or local-only context and is not the current production architecture.
 
-## Main files
+## Current production architecture
 
 ```text
-index.html                 Public portfolio page
-index.php                  PHP entry point for the portfolio
-assets/css/style.css       Visual design and responsive layout
-assets/js/script.js        Interface behavior and contact requests
-assets/php/db.php          PDO database bootstrap
-assets/php/contact.php     Contact form API
-assets/php/csrf.php        Session token endpoint
-assets/php/health.php      Database health endpoint
-assets/php/admin.php       Protected message dashboard
-setup.sql                  MySQL schema
-resume/CV.docx             Downloadable CV
-tests/smoke.php            Live endpoint checks
+GitHub Pages frontend
+        |
+        v
+Cloudflare Worker API
+        |
+        v
+Cloudflare D1 database
 ```
 
-## Local configuration
+The Worker source is in `cloudflare/src/index.js`, and the runtime configuration lives in `wrangler.toml`.
 
-Copy `.env.example` to `.env` and set the real local values. Keep `.env` private.
+## Repository structure
 
 ```text
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME=portfolio_db
-DB_USER=root
-DB_PASS=your-mysql-password
-CONTACT_RATE_LIMIT_SECONDS=60
-CONTACT_ALLOWED_ORIGINS=https://renaud-ist.github.io,http://localhost:8080,http://127.0.0.1:8080
-API_AUTH_TOKEN_TTL_SECONDS=1800
-API_AUTH_LOGIN_RATE_LIMIT_SECONDS=10
-REPLY_EMAIL_ENABLED=false
-REPLY_FROM_EMAIL=
-CONTACT_NOTIFICATION_EMAIL=
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASS=
-SMTP_ENCRYPTION=tls
-ADMIN_USER=admin
-ADMIN_PASS=use-a-password_hash-value
+cloudflare/src/index.js     Worker implementation
+cloudflare/migrations/      D1 migration files
+wrangler.toml               Worker and D1 configuration
+README.md                   Project overview
+DEPLOYMENT.md               Deployment guidance for current environment
 ```
 
-The application reads `.env` through `assets/php/db.php`. Production deployments should use a dedicated MySQL account instead of `root`.
+## Runtime responsibilities
 
-### Cloudflare Worker configuration
+The Worker handles:
 
-The Cloudflare Worker uses the D1 binding configured in `wrangler.toml` and reads the Brevo API key from the Worker secret `BREVO_API_KEY`. Configure the verified Brevo sender as the non-secret Worker variable `REPLY_FROM_EMAIL`; optionally set `REPLY_FROM_NAME` for the sender display name. Never put the Brevo API key in source code, `wrangler.toml`, frontend JavaScript, or committed files.
+- contact submissions
+- admin authentication
+- conversation retrieval and mutation
+- admin replies
+- notification queries
+- optional email delivery through Brevo
 
-For local Worker development, provide the same variable names through Wrangler's local secret/environment mechanism. The Worker persists an admin reply before attempting email delivery and reports `not_configured`, `provider_error`, `network_error`, or `sent` without exposing provider details to the browser.
+The Worker reads the D1 binding from `wrangler.toml` and does not rely on PHP or MySQL for the verified production path.
 
-## Database setup
+## Environment values
 
-Create the database and tables with MySQL:
+The production environment contains sensitive values such as:
 
-```powershell
-mysql -u root -p -e "source setup.sql"
+- `BREVO_API_KEY`
+- any admin credential material in the deployed environment
+
+These must remain in secure Cloudflare environment storage and must not be committed to source control or documentation.
+
+## Local development
+
+Use Wrangler to run or test the Worker locally when needed:
+
+```bash
+npx wrangler dev
 ```
 
-The schema contains the contact-message table and the database-backed rate-limit table. Contact records support read and archive states for dashboard management.
+If a local preview is required, keep it separate from the production environment and do not apply D1 migrations or secrets into the live database without explicit approval.
 
-### Backend foundation migrations
+## Verified API routes
 
-Run migrations from the project root on the PHP/MySQL host:
-
-```powershell
-php database/migrate.php status
-php database/migrate.php migrate
-php database/migrate.php verify
-```
-
-The migration runner uses the existing PDO configuration from `assets/php/db.php`. It creates `schema_migrations`, adds the backend foundation tables, and copies existing `contact_messages` into conversations and visitor messages without modifying or deleting the legacy table. Re-running `migrate` is safe.
-
-Run the migration checks after applying the migrations:
-
-```powershell
-php tests/migrations.php
-```
-
-## Run locally
-
-Use a PHP-enabled server from the project directory:
-
-```powershell
-php -S 127.0.0.1:8080
-```
-
-Open:
-
-```text
-http://127.0.0.1:8080/index.php
-```
-
-A static server can display the page, but it cannot execute the PHP API or connect to MySQL.
-
-## Backend routes
-
-```text
-POST /api/contact.php         Save a JSON contact message in the backend foundation
-POST /api/auth/login.php      Authenticate an admin and issue a bearer token
-POST /api/auth/logout.php     Revoke the current bearer token
-GET  /api/auth/me.php         Return the authenticated admin identity
-POST /api/conversation/reply.php?id=<id>  Store an authenticated admin reply
-GET  /api/notifications.php       List authenticated-admin notifications
-POST /assets/php/contact.php   Save a contact message
-GET  /assets/php/csrf.php      Create a contact-form token
-GET  /assets/php/health.php    Check database readiness
-GET  /assets/php/admin.php     Open the administrator dashboard
-```
-
-The Cloudflare Worker routes used by the GitHub Pages frontend are:
+The current Worker provides these routes:
 
 ```text
 POST   /api/contact
@@ -142,121 +83,18 @@ GET    /api/notifications
 DELETE /api/notifications?id=<id>
 ```
 
-The dashboard requires `ADMIN_USER` and `ADMIN_PASS`. `ADMIN_PASS` must be a PHP password hash created with `password_hash()`; plaintext administrator passwords are not accepted.
+These are the routes the GitHub Pages frontend consumes.
 
-The API authentication endpoints use short-lived opaque bearer tokens. Tokens are sent as `Authorization: Bearer <token>` and are never stored in plaintext. Configure their lifetime with `API_AUTH_TOKEN_TTL_SECONDS` (default 1800 seconds). Login attempts use the existing rate-limit table with `API_AUTH_LOGIN_RATE_LIMIT_SECONDS` (default 10 seconds).
+## Security and deployment guidance
 
-Admin replies are persisted before the optional Brevo email attempt. Email delivery is reported as not configured until `BREVO_API_KEY` and a verified `REPLY_FROM_EMAIL` are available to the Worker. A provider or network failure does not roll back the stored reply; the API returns an accurate delivery status. Admin replies create a pending `new_admin_reply` notification for the inbox.
+- Do not store secrets in source files or migration files
+- Do not modify production D1 state without explicit authorization
+- Keep admin credentials and provider keys in secure Worker environment configuration
+- Use the Worker and D1 only as the authoritative production backend
+- Treat older PHP or MySQL instructions as historical context only
 
-Notifications use the existing `recipient_type=admin`, `notification_type=new_contact_message`, and `status=pending` conventions. `GET /api/notifications.php` is authenticated and paginated. The current schema has no notification read-state or per-admin owner field, so Stage 7 does not expose read/unread mutation or claim per-admin notification ownership.
+## Notes
 
-## Validation
-
-Run the smoke checks against a running PHP server:
-
-```powershell
-php tests/smoke.php http://127.0.0.1:8080
-```
-
-The checks cover the portfolio entry point, health endpoint, CSRF endpoint, admin route, manifest, robots file, contact validation, and CSRF rejection.
-
-## Deployment guide
-
-### Requirements
-
-- PHP 8.1 or newer with PDO, PDO MySQL, JSON, Filter, OpenSSL, and Session.
-- MySQL 8.0 or newer.
-- Apache 2.4 with `mod_headers` and `mod_rewrite`, or Nginx with PHP-FPM.
-- HTTPS in production.
-- A protected `.env` or equivalent environment-variable configuration.
-- A restricted application database user. Do not use the administrative MySQL account at runtime.
-
-The application has no file uploads, cron jobs, background workers, or application-owned writable directories. File fallback is disabled by default.
-
-### Hosting model
-
-The current application must run on PHP-capable hosting:
-
-```text
-https://your-domain.example/
-        |
-        v
-PHP application -> PDO -> MySQL
-```
-
-GitHub Pages cannot execute PHP or access MySQL. It may host a separate display-only frontend, but the current contact form, admin authentication, CSRF, and messaging features require the PHP application and database. A split frontend/API deployment would require deliberate CORS, API URL, cookie, and CSRF changes and is not the current architecture.
-
-### Database setup
-
-Use an administrative MySQL account only to create the database and restricted application user:
-
-```sql
-CREATE DATABASE portfolio_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'portfolio_app'@'localhost' IDENTIFIED BY 'replace-with-a-secret';
-GRANT SELECT, INSERT, UPDATE, DELETE ON portfolio_db.* TO 'portfolio_app'@'localhost';
-FLUSH PRIVILEGES;
-```
-
-Import `setup.sql`, create `.env` from `.env.example`, and configure the restricted user. Never commit production credentials.
-
-Run the migration and verification commands from the project root:
-
-```powershell
-php database/migrate.php status
-php database/migrate.php migrate
-php database/migrate.php verify
-php tests/migrations.php
-```
-
-Migrations preserve the legacy `contact_messages` table and copy existing records into the conversation tables without duplicating them on a safe rerun.
-
-### Deployment steps
-
-1. Upload or clone the project to the PHP host.
-2. Point the web document root at the application directory or an equivalent configured public directory.
-3. Create the restricted MySQL user and import `setup.sql`.
-4. Create `.env` with deployment-specific values.
-5. Set `APP_ENV=production` and `APP_DEBUG=false`.
-6. Set `ADMIN_USER` and a `password_hash()` value in `ADMIN_PASS`.
-7. Keep `.htaccess` enabled under Apache. Under Nginx, deny access to `.env`, `setup.sql`, `resume`, `tests`, `extract_cv.py`, and repository metadata.
-8. Enable HTTPS and redirect HTTP to HTTPS.
-9. Back up MySQL and test restoring a backup before launch.
-
-### Notifications and messaging
-
-Contact records are persisted in MySQL before optional notification delivery. `REPLY_EMAIL_ENABLED=false` is the default. The current optional contact notification uses PHP `mail()` when `CONTACT_NOTIFICATION_EMAIL` is configured; SMTP variables are not consumed by the current application. Reliable production email delivery is therefore not verified and requires a working mail transport or mail library.
-
-Admin replies are stored in `conversation_messages` before the optional email attempt. Authentication uses short-lived opaque bearer tokens; raw tokens are returned once at login and are not stored in the database.
-
-### Verification
-
-After deployment, verify the homepage, health endpoint, CSRF endpoint, admin route, contact submission, and protected messaging flow:
-
-```text
-GET /index.php
-GET /assets/php/health.php
-GET /assets/php/csrf.php
-GET /assets/php/admin.php
-POST /assets/php/contact.php
-```
-
-Run the smoke checks against the deployed host:
-
-```powershell
-php tests/smoke.php https://your-deployed-host.example
-```
-
-Confirm HTTPS, database readiness, contact persistence, admin authentication, conversation access, reply persistence, CSRF rejection, and generic production error responses.
-
-### Security and rollback
-
-- Keep `.env` private; it is ignored by the project configuration.
-- Use HTTPS and secure cookies.
-- Keep CORS restricted to explicitly trusted origins.
-- Keep credentials out of source control.
-- Review message retention and privacy requirements.
-- Keep the previous release available and deploy new code to a versioned directory.
-- Run health checks before switching the document root.
-- Roll back application code first when the schema remains compatible; restore the database backup only when a schema change must be reversed.
+The legacy PHP-driven documentation and MySQL setup files are not the current production design. The authoritative deployment documentation for this backend is the Cloudflare Worker + D1 model described in this README and the project deployment guide.
 
 The portfolio describes verified academic and service experience. Add repositories, screenshots, live demos, employment history, or certifications only when their details can be verified.
