@@ -198,6 +198,11 @@ if (form) {
 
     const formData = new FormData(form);
     const submitButton = form.querySelector('button[type="submit"]');
+
+    if (!statusBox || !submitButton) {
+      return;
+    }
+
     const name = safeText(formData.get('name'));
     const email = safeText(formData.get('email'));
     const subject = safeText(formData.get('subject'));
@@ -209,6 +214,7 @@ if (form) {
     }
 
     if (!name || !email || !message) {
+      statusBox.classList.remove('success');
       statusBox.classList.add('error');
       statusBox.textContent = 'Please enter your name, email, and message.';
       return;
@@ -216,7 +222,7 @@ if (form) {
 
     submitButton.disabled = true;
     submitButton.textContent = 'Sending...';
-    statusBox.classList.remove('error');
+    statusBox.classList.remove('error', 'success');
     statusBox.textContent = 'Sending your message...';
 
     try {
@@ -238,10 +244,11 @@ if (form) {
 
       statusBox.classList.remove('error');
       statusBox.classList.add('success');
-      statusBox.textContent = result.message || 'Your message has been successfully sent.';
+      statusBox.textContent = 'Your message has been successfully sent.';
       form.reset();
     } catch (error) {
       console.error('Contact form submission failed:', error);
+      statusBox.classList.remove('success');
       statusBox.classList.add('error');
       statusBox.textContent = mapApiError(error, 'Something went wrong. Please try again.');
     } finally {
@@ -384,9 +391,9 @@ const clearAdminSession = () => {
   }
 
   if (adminPanel) adminPanel.hidden = true;
+  if (adminLoginSection) adminLoginSection.hidden = false;
+  if (adminDashboardSection) adminDashboardSection.hidden = true;
 
-
-  // Clear login credentials and restore the password control to its initial state.
   if (adminLoginForm) {
     adminLoginForm.reset();
   }
@@ -410,6 +417,7 @@ const clearAdminSession = () => {
     adminLoginStatus.classList.remove('error', 'success');
   }
 
+  adminState.currentView = 'inbox';
 
   renderAdminState();
   renderConversation();

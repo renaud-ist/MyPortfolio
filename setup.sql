@@ -1,6 +1,3 @@
-CREATE DATABASE IF NOT EXISTS portfolio_db;
-USE portfolio_db;
-
 CREATE TABLE IF NOT EXISTS contact_messages (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
