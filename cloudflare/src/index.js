@@ -5,6 +5,8 @@ const allowedOrigins = new Set([
   'https://renaud-ist.github.io',
   'http://localhost:8080',
   'http://127.0.0.1:8080',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
 ]);
 
 function corsHeaders(origin) {
@@ -15,7 +17,7 @@ function corsHeaders(origin) {
   return {
     'access-control-allow-origin': origin,
     'access-control-allow-methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-    'access-control-allow-headers': 'Content-Type, Authorization',
+    'access-control-allow-headers': 'Accept, Content-Type, Authorization',
     'access-control-max-age': '86400',
     vary: 'Origin',
   };
@@ -1228,7 +1230,7 @@ export default {
           }, 429, headers);
         }
 
-        return jsonResponse({ ok: true, message: 'Your message has been received.' }, 201, headers);
+        return jsonResponse({ ok: true, message: 'Your message has been successfully sent.' }, 201, headers);
       } catch (error) {
         return jsonResponse({ ok: false, error: 'The message could not be saved.' }, 500, headers);
       }
