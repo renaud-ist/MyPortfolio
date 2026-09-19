@@ -1,176 +1,68 @@
-# Deployment Guide
+# Frontend deployment guide
 
-This repository is a PHP + MySQL portfolio application. It is not a GitHub Pages-only project and it is not a static-site deployment.
+This repository is the GitHub Pages frontend for the MyPortfolio site. It is not a PHP application and it is not deployed as a standalone backend.
+
+## Verified production model
+
+The live production flow is:
+
+```text
+GitHub Pages frontend
+        |
+        v
+Cloudflare Worker API
+        |
+        v
+Cloudflare D1 database
+```
+
+The Worker handles the contact, auth, conversation, notification, and reply endpoints. The frontend calls those API routes from the browser and does not connect directly to a database.
 
 ## Deployment requirements
 
-| Requirement | Current state | Production requirement |
-| --- | --- | --- |
-| PHP | Verified locally | PHP version required by the project; production host must support PHP and the required extensions |
-| MySQL | Verified locally | Compatible production MySQL instance |
-| PDO MySQL | Verified locally | Required for database access |
-| Web server | Local PHP server tested | Apache, Nginx, or another PHP-capable host |
-| HTTPS | Local only | Required for production |
-| Database user | Local development credentials only | Restricted production database user |
-| SMTP | Not implemented or not verified in the current code path | Required only if email notification is enabled |
-| Environment variables | Local `.env` file | Secure production environment variables or protected `.env` |
-| Domain | Not configured | Optional initially, but required for a public production URL |
-| Backups | Not configured | Required before production use |
+- GitHub Pages enabled for the repository
+- Cloudflare Worker deployed and reachable from the frontend
+- Cloudflare D1 database configured for the Worker
+- Valid API base URL configuration in the frontend JavaScript
+- HTTPS on the public site and API endpoints
+- Secure handling of Worker secrets and provider credentials
 
-## GitHub Pages limitation
+## GitHub Pages setup
 
-The repository includes a PHP backend and MySQL-backed contact logic. GitHub Pages cannot execute PHP code or access a MySQL database. The recommended architecture is therefore:
+Upload or publish the repository content to GitHub Pages. This is a static hosting deployment for the public portfolio content.
 
-Browser
-↓
-PHP-capable hosting
-↓
-PHP application
-↓
-PDO
-↓
-MySQL
+The deployment is not a PHP deployment. There is no server-side PHP runtime or MySQL database in the public-facing frontend path.
 
-GitHub Pages may host a separate static frontend only if the frontend is designed to call an externally hosted PHP API. That is not the current application architecture and it is not the recommended deployment shape for this repository.
+## API configuration
 
-## GitHub Pages compatibility
+The browser-side code calls the Cloudflare Worker endpoints. The Worker is the authoritative backend and should be considered the public API host for production behavior.
 
-The static portfolio frontend can be published on GitHub Pages as a presentation layer, but it is not a replacement for the production application. The static website can safely host the portfolio content, navigation, images, and downloadable CV, provided that these paths remain relative and the backend endpoints remain on a PHP-capable host.
+This means:
 
-The GitHub Pages version can work only when the frontend is intentionally limited to display-only content. The current contact form and admin features require the PHP + MySQL deployment because GitHub Pages cannot execute PHP or access MySQL.
+- the frontend is static and presentation-focused
+- the API layer is external and separate from GitHub Pages
+- contact submissions, admin authentication, inbox data, and replies are handled by the Worker and D1
+- any environment-specific values, including provider secrets, remain in Worker config and secret storage rather than in frontend source
 
-## Step 1 — Hosting
+## Operational checks
 
-The production host must support:
+After deployment, validate that:
 
-- PHP
-- PDO MySQL
-- MySQL
-- HTTPS
-- environment variables or a protected `.env`
-- outbound SMTP if email notification is enabled
+1. the GitHub Pages site loads successfully
+2. the contact form submits successfully through the Worker API
+3. admin login works against the backend auth routes
+4. the inbox and notifications render correctly
+5. admin replies persist and status is reported accurately
+6. CORS and API access rules remain limited to trusted origins
 
-The app does not require a custom framework or a new backend. It should run on any PHP-capable hosting environment that supports MySQL and HTTPS.
+## Security and rollback
 
-## Step 2 — Database
+- Never publish secret values in the repository
+- Keep Worker secrets in Cloudflare secret storage
+- Keep the API base URL aligned with the deployed Worker
+- Use HTTPS for all public routes
+- If a frontend rollback is needed, restore the previous GitHub Pages publish state without altering the API or database configuration
 
-The administrator should:
+## Important note
 
-1. Create the production database.
-2. Create a restricted application database user.
-3. Grant only the permissions required by the application.
-4. Import `setup.sql`.
-5. Verify that the expected tables exist.
-
-A typical pattern is:
-
-```sql
-CREATE DATABASE portfolio_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'portfolio_app'@'localhost' IDENTIFIED BY 'replace-with-a-secret';
-GRANT SELECT, INSERT, UPDATE, DELETE ON portfolio_db.* TO 'portfolio_app'@'localhost';
-FLUSH PRIVILEGES;
-```
-
-Do not commit real passwords. The repository must not store production credentials in source control.
-
-## Step 3 — Application
-
-1. Upload or clone the repository to the target PHP host.
-2. Configure `.env` from `.env.example` using only non-production values until the host is ready.
-3. Ensure the web document root points to the application directory or an equivalent public directory.
-4. Enable the required PHP extensions: PDO, PDO MySQL, JSON, Filter, OpenSSL, and Session.
-5. Configure the web server to route PHP files correctly.
-6. Enable HTTPS and redirect HTTP traffic to HTTPS.
-7. Ensure sensitive files remain inaccessible via the web server.
-
-The current application expects:
-
-- `APP_ENV`
-- `APP_DEBUG`
-- `DB_HOST`
-- `DB_PORT`
-- `DB_NAME`
-- `DB_USER`
-- `DB_PASS`
-- `CONTACT_RATE_LIMIT_SECONDS`
-- `CONTACT_NOTIFICATION_EMAIL`
-- `CONTACT_ALLOW_FILE_FALLBACK`
-- `ADMIN_USER`
-- `ADMIN_PASS`
-
-## Step 4 — Verification
-
-The actual project routes and checks are:
-
-- `GET /index.php` — homepage
-- `GET /assets/php/health.php` — database readiness
-- `GET /assets/php/csrf.php` — CSRF token generation
-- `GET /assets/php/admin.php` — admin login page
-- `POST /assets/php/contact.php` — contact form
-- `GET /site.webmanifest` — manifest
-- `GET /robots.txt` — crawler rules
-
-The local smoke test is:
-
-```powershell
-php tests/smoke.php http://127.0.0.1:8080
-```
-
-The application should be checked for:
-
-- homepage availability
-- health endpoint status
-- contact form validation and CSRF rejection
-- database persistence when MySQL is available
-- admin authentication and authorization
-- HTTPS behavior
-- secure error handling without stack traces to visitors
-
-## Step 5 — Rollback
-
-1. Keep the previous application version available.
-2. Deploy the new version to a separate directory or release path.
-3. Run health checks before switching the document root.
-4. If the schema remains compatible, roll back application code first.
-5. If a schema change must be reversed, restore the database backup.
-6. Re-enable the previous document root only after verification succeeds.
-
-## Security configuration summary
-
-The repository includes the following deployment-aware protections:
-
-- `.env` is ignored by the project configuration
-- `.htaccess` denies access to sensitive files
-- PHP error display is disabled in production mode
-- `APP_DEBUG=false` is the expected production setting
-- secure cookies are used when HTTPS is present
-- CORS is not configured permissively for this app
-- credentials are not hard-coded in source files
-- the application recommends a dedicated database user rather than root
-- stack traces are not returned to visitors
-
-## SMTP and notification status
-
-The contact processing code includes an optional email notification path using PHP `mail()` when `CONTACT_NOTIFICATION_EMAIL` is set. This is not a verified production SMTP setup. It requires a working mail configuration and provider support. The current repository does not include a verified production SMTP configuration.
-
-## Fresh database initialization
-
-The current `setup.sql` file is suitable for creating the required tables in a fresh database. However, fresh production database initialization was not verified against an isolated disposable database in this environment. This requires a real isolated production or disposable environment before it can be confirmed.
-
-## Local validation status
-
-The project has been validated locally with the existing smoke test suite and PHP syntax checks.
-
-- PHP syntax: passed
-- database connection: passed locally
-- schema verification: passed locally
-- smoke tests: passed locally
-- contact validation: passed locally
-- CSRF: passed locally
-- health endpoint: passed locally
-- admin route: passed locally
-- manifest and robots: passed locally
-
-## Final deployment readiness
-
-This repository is prepared for real deployment as a PHP + MySQL application once a PHP-capable production host, database, and environment configuration are available. It is not ready to claim a public deployment without those external production details.
+Older documentation in this repository describing PHP/MySQL hosting is outdated for the current production architecture. The correct public deployment model is GitHub Pages for the frontend and Cloudflare Worker + D1 for the application backend.
