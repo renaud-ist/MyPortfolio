@@ -720,7 +720,6 @@
   id="contactForm"
   class="contact-card"
   method="POST"
-  action="api/contact.php"
 >
             <label class="honeypot" aria-hidden="true">
               Website
@@ -728,15 +727,15 @@
             </label>
             <label>
               Name
-              <input type="text" name="name" placeholder="Your name" maxlength="120" required />
+              <input type="text" name="name" placeholder="Your name" maxlength="100" required />
             </label>
             <label>
               Email
-              <input type="email" name="email" placeholder="you@example.com" maxlength="180" required />
+              <input type="email" name="email" placeholder="you@example.com" maxlength="254" required />
             </label>
             <label>
               Subject
-              <input type="text" name="subject" placeholder="How can I help?" maxlength="255" required />
+              <input type="text" name="subject" placeholder="How can I help?" maxlength="200" required />
             </label>
             <label>
               Message
