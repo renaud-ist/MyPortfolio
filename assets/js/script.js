@@ -451,6 +451,22 @@ const renderAdminState = () => {
   if (usernameElement) usernameElement.textContent = username;
   if (emailElement) emailElement.textContent = email;
   if (roleElement) roleElement.textContent = role;
+
+  syncNotificationBellState();
+};
+
+const syncNotificationBellState = () => {
+  if (!notificationBell) return;
+
+  const authenticated = Boolean(adminState.token && adminState.user);
+  const open = authenticated && adminState.currentView === 'notifications';
+
+  notificationBell.setAttribute('aria-expanded', String(open));
+  notificationBell.setAttribute(
+    'aria-label',
+    open ? 'Notifications panel open' : 'Open admin notifications'
+  );
+  notificationBell.title = open ? 'Notifications panel open' : 'Notifications';
 };
 
 const showAdminView = (view) => {
@@ -476,6 +492,8 @@ const showAdminView = (view) => {
       button.getAttribute('data-admin-view') === nextView
     );
   });
+
+  syncNotificationBellState();
 };
 
 const renderConversationCard = (conversation, archived = false) => {
@@ -1449,10 +1467,11 @@ if (adminToggle) {
 }
 
 if (notificationBell) {
-  notificationBell.addEventListener('click', () => {
+  notificationBell.addEventListener('click', async () => {
     if (!adminState.token) {
       if (adminPanel) adminPanel.hidden = false;
       if (adminLoginSection) adminLoginSection.hidden = false;
+      if (adminDashboardSection) adminDashboardSection.hidden = true;
       adminLoginForm?.querySelector('input')?.focus();
       return;
     }
@@ -1461,7 +1480,7 @@ if (notificationBell) {
 
     renderAdminState();
     showAdminView('notifications');
-    fetchNotifications();
+    await fetchNotifications();
   });
 }
 

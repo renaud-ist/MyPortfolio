@@ -78,6 +78,14 @@ textarea {
   font: inherit;
 }
 
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 2px solid rgba(115, 215, 255, 0.9);
+  outline-offset: 2px;
+}
+
 .site-shell {
   position: relative;
   z-index: 1;
@@ -755,10 +763,14 @@ textarea {
 }
 
 .admin-panel {
+  position: relative;
+  z-index: 12;
   padding: 20px 0 10px;
 }
 
 .admin-shell {
+  position: relative;
+  z-index: 13;
   border: 1px solid var(--line);
   border-radius: 26px;
   background: linear-gradient(180deg, rgba(9, 18, 27, 0.9), rgba(15, 28, 42, 0.8));
@@ -797,6 +809,7 @@ textarea {
 
 .admin-bell {
   position: relative;
+  z-index: 20;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -808,12 +821,22 @@ textarea {
   color: var(--text);
   font-size: 1.2rem;
   cursor: pointer;
+  pointer-events: auto;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-bell:hover,
+.admin-bell:focus-visible {
+  border-color: rgba(115, 215, 255, 0.7);
+  background: rgba(115, 215, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(115, 215, 255, 0.12);
 }
 
 .notification-count {
   position: absolute;
   top: -6px;
   right: -4px;
+  z-index: 2;
   min-width: 22px;
   height: 22px;
   border-radius: 999px;
@@ -822,6 +845,7 @@ textarea {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: #081722;
   font-size: 0.72rem;
+  line-height: 1;
   font-weight: 800;
   padding: 0 5px;
 }
